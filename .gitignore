@@ -1,0 +1,11 @@
+*.png
+*.npy
+*.npz
+*.csv
+*.txt
+*.json
+*.ndjson
+*.log
+
+__pycache__/
+.ipynb_checkpoints/
