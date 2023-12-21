@@ -1,0 +1,80 @@
+#!/usr/bin/env -S sh -c '"$(dirname "$0")/../../scripts/train_seg.py" --config_path "$0" "$@"'
+# yaml-language-server: $schema=../schema.json
+%YAML 1.2
+---
+_type_: kore.configs.roots.training.SegTrainingConfig
+trainer:
+  callbacks:
+    early_stopping:
+      patience: 12
+    model_checkpoint:
+      dirpath: /home/li.yu/exps/driveable_terrain_model/test_run
+      save_top_k: -1
+  max_steps: 5000000
+  max_epochs: 100
+lr_scheduler:
+  T_max: 100
+  _type_: kore.configs.third_party.lr_scheduler_config.CosineAnnealingLRConfig
+model:
+  _type_: kore.configs.tasks.semantic_segmentation.model_config.BRTResnetPyramidLite12Config
+  model_params: 
+    structural_reparameterization_on_stem: true
+  dust:
+    dust_seg_output: true
+  merge_stop_class_confidence_threshold: -1
+loss:
+  fl:
+    alpha: 1.0
+  tv:
+    fp_weight: [0.6,0.3,0.6,0.6,0.6,0.3,0.3]
+    fn_weight: [0.4,0.7,0.4,0.4,0.4,0.7,0.7]
+    class_weight: [1.0,2.0,1.0,1.0,2.0,10.0,5.0]
+  prodl: {}
+  prodl_weight: 0.1
+  hardsoft_iq:
+    class_weight: [0.2, 1.0]
+  hardsoft_iq_weight: 1.0
+inputs:
+  normalization:
+    _type_: kore.configs.data.input_data_config.TonemapNormalizationConfig
+  label:
+    label_map_file: /home/li.yu/code/JupiterCVML/europa/base/src/europa/dl/config/label_maps/seven_class_train.csv
+    label_map_file_iq: /home/li.yu/code/JupiterCVML/europa/base/src/europa/dl/config/label_maps/binary_dust.csv
+data:
+  train_set:
+    csv_name: master_annotations.csv
+    # dataset_path: /data2/jupiter/datasets/Jupiter_train_v6_2
+    dataset_path: /data2/jupiter/datasets/halo_rgb_stereo_train_v6_1
+    num_workers: 2
+  validation_set:
+  validation_set_ratio: 0.05
+batch_size: 2
+num_workers: 2
+augmentation:
+  cnp:
+    preparer:
+      num_workers: 2
+    humans:
+      sample_ratio: 0.40
+      standing_max_pixels: 100_000
+      cutout_rate: 0.5
+  dust:
+    use: true
+    exp_id: 3
+    p: 1.0
+    max_p_aug_per_cls: 1.0
+    dust_percent: [0.2, 0.4]
+    min_error: 0.0
+    max_error: [0.6, 0.8]
+    wind_direction: ['left', 'right', 'away']
+    blending_technique: multiply
+    ignore_human: false
+    noignore_human: false
+    ignore_vehicle: false
+    noignore_vehicle: false
+    only_human: false
+    noonly_human: false
+    stalk_p: 0.0
+    nl_p: 0.0
+    
+num_log_images: 20 # highish because many iq images are boring
