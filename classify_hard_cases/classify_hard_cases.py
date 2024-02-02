@@ -52,9 +52,14 @@ class HaloData(torch.utils.data.Dataset):
         row = self.df.iloc[idx]
         
         # get image
-        image = Image.open(row.artifact_debayeredrgb_0_save_path)
-        # image = Image.open(os.path.join(self.data_dir, row.artifact_debayeredrgb_0_save_path))
-        # label = Image.open(os.path.join(self.data_dir, row.annotation_pixelwise_0_save_path))
+        if phase == 'train':
+            image = Image.open(row.artifact_debayeredrgb_0_save_path)
+        else:
+            try:
+                image = Image.open(os.path.join(self.data_dir, row.artifact_debayeredrgb_0_save_path))
+            except:
+                image = Image.new('RGB', (1944, 1204))
+            # label = Image.open(os.path.join(self.data_dir, row.annotation_pixelwise_0_save_path))
         image = self.transform(image)
         
         # get label
@@ -66,6 +71,7 @@ class HaloData(torch.utils.data.Dataset):
             return row.unique_id, image, label
         else:
             return row.unique_id, image
+            # return row.id, image
 
 
 class Solver:
@@ -190,13 +196,13 @@ if __name__ == '__main__':
         transforms.RandomHorizontalFlip(),
         transforms.ColorJitter(brightness=0.1,contrast=0.1,saturation=0.2,hue=0.3),
         transforms.ToTensor(),
-        transforms.Normalize((0.3374, 0.3408, 0.3932), (0.2072, 0.2146, 0.2453)),
+        # transforms.Normalize((0.3374, 0.3408, 0.3932), (0.2072, 0.2146, 0.2453)),
     ])
 
     transform_test = transforms.Compose([
         transforms.Resize((512,1024)),
         transforms.ToTensor(),
-        transforms.Normalize((0.3374, 0.3408, 0.3932), (0.2072, 0.2146, 0.2453)),
+        # transforms.Normalize((0.3374, 0.3408, 0.3932), (0.2072, 0.2146, 0.2453)),
     ])
 
     if len(sys.argv) < 3:
@@ -245,16 +251,20 @@ if __name__ == '__main__':
         solver = Solver(dataloaders, model_dir, torch.tensor(pos_weight))
         solver.train()
     else:
-        data_dir = '/data2/jupiter/datasets/halo_rgb_stereo_test_v6_1/'
-        csv_path = os.path.join(data_dir, 'master_annotations_dedup.csv')
-        save_dir = f'/data/jupiter/li.yu/exps/driveable_terrain_model/{run_id}/halo_rgb_stereo_test_v6_1'
+        # dataset = '20240119_halo_rgb_stereo'
+        dataset = '20231219_halo_rgb_stereo'
+        # dataset = 'halo_rgb_stereo_test_v6_1'
+        data_dir = f'/data2/jupiter/datasets/{dataset}/'
+        # csv_path = os.path.join(data_dir, 'master_annotations_dedup.csv')
+        csv_path = os.path.join(data_dir, 'annotations_left.csv')
+        save_dir = f'/data/jupiter/li.yu/exps/driveable_terrain_model/{run_id}/{dataset}'
         os.makedirs(save_dir, exist_ok=True)
         logging.info(f'writing results to {save_dir}')
         test_df = pd.read_csv(csv_path)
         logging.info(f'{test_df.shape}')
         test_set = HaloData(data_dir, test_df, transform_test, phase)
         test_loader = torch.utils.data.DataLoader(
-            test_set, batch_size=24, shuffle=False, num_workers=8)
+            test_set, batch_size=64, shuffle=False, num_workers=16)
         dataloaders = {'test':test_loader}
     
         solver = Solver(dataloaders, model_dir, None)
