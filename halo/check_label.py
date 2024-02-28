@@ -14,14 +14,15 @@ from tqdm import tqdm
 from pprint import pprint
 
 
-root_dir = '/data/jupiter/datasets'
-# root_dir = '/data2/jupiter/datasets'
+# root_dir = '/data/jupiter/datasets'
+root_dir = '/data2/jupiter/datasets'
 # dataset = 'Jupiter_train_v6_2'
-dataset = 'humans_on_path_test_set_2023_v15_anno'
+# dataset = 'humans_on_path_test_set_2023_v15_anno'
 # dataset = 'halo_rgb_stereo_train_v6_1'
 # dataset = 'halo_rgb_stereo_test_v6_1'
 # dataset = 'halo_rgb_stereo_train_v6_2_full_res'
 # dataset = 'halo_rgb_stereo_test_v6_2'
+dataset = 'halo_humans_on_path_test_v6_2_3_mainline'
 csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
 df = pd.read_csv(csv)
 print(df.shape)
@@ -85,4 +86,4 @@ for i,row in tqdm(df.iterrows(), total=len(df), miniters=int(len(df)/100)):
 
 df_output = pd.DataFrame.from_dict(df_records)
 print(df_output.shape)
-df_output.to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/rev1_test_humanv15.csv', index=False)
+df_output.to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/test_v6_2_3.csv', index=False)
