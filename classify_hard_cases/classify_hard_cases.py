@@ -70,8 +70,8 @@ class HaloData(torch.utils.data.Dataset):
                 label = np.clip(np.array([row[sub] / thres for sub,thres in categorical_labels]), None, 1.0).astype(np.float32)
             return row.unique_id, image, label
         else:
-            return row.unique_id, image
-            # return row.id, image
+            # return row.unique_id, image
+            return row.id, image
 
 
 class Solver:
@@ -252,11 +252,13 @@ if __name__ == '__main__':
         solver.train()
     else:
         # dataset = '20240119_halo_rgb_stereo'
-        dataset = '20231219_halo_rgb_stereo'
+        # dataset = '20231219_halo_rgb_stereo'
         # dataset = 'halo_rgb_stereo_test_v6_1'
+        dataset = 'halo_potential_airborne_debris_from_train_6_2'
         data_dir = f'/data2/jupiter/datasets/{dataset}/'
         # csv_path = os.path.join(data_dir, 'master_annotations_dedup.csv')
-        csv_path = os.path.join(data_dir, 'annotations_left.csv')
+        # csv_path = os.path.join(data_dir, 'annotations_left.csv')
+        csv_path = os.path.join(data_dir, 'annotations.csv')
         save_dir = f'/data/jupiter/li.yu/exps/driveable_terrain_model/{run_id}/{dataset}'
         os.makedirs(save_dir, exist_ok=True)
         logging.info(f'writing results to {save_dir}')
