@@ -22,7 +22,9 @@ root_dir = '/data2/jupiter/datasets'
 # dataset = 'halo_rgb_stereo_test_v6_1'
 # dataset = 'halo_rgb_stereo_train_v6_2_full_res'
 # dataset = 'halo_rgb_stereo_test_v6_2'
-dataset = 'halo_humans_on_path_test_v6_2_3_mainline'
+# dataset = 'halo_humans_on_path_test_v6_2_3_mainline'
+# dataset = 'halo_rgb_stereo_train_v8_0'
+dataset = 'halo_rgb_stereo_test_v8_0'
 csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
 df = pd.read_csv(csv)
 print(df.shape)
@@ -86,4 +88,4 @@ for i,row in tqdm(df.iterrows(), total=len(df), miniters=int(len(df)/100)):
 
 df_output = pd.DataFrame.from_dict(df_records)
 print(df_output.shape)
-df_output.to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/test_v6_2_3.csv', index=False)
+df_output.to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/test_v8_0.csv', index=False)
