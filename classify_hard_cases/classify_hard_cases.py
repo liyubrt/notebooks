@@ -18,7 +18,8 @@ import torchvision
 from torchvision import datasets, models, transforms
 import torch.optim as optim
 logging.basicConfig(level=logging.INFO)
-
+sys.path.append('../')
+from utils import normalize_image
 
 # Use binary label or percentage label
 BINARY_LABEL = True
@@ -39,11 +40,12 @@ else:
 
 
 class HaloData(torch.utils.data.Dataset):
-    def __init__(self, data_dir, df, transform, phase):
+    def __init__(self, data_dir, df, transform, phase, rectify=False):
         self.data_dir = data_dir
         self.df = df
         self.transform = transform
         self.phase = phase
+        self.rectify = rectify
         
     def __len__(self):
         return len(self.df)
@@ -52,18 +54,20 @@ class HaloData(torch.utils.data.Dataset):
         row = self.df.iloc[idx]
         
         # get image
-        if phase == 'train':
-            image = Image.open(row.artifact_debayeredrgb_0_save_path)
-        else:
-            try:
+        try:
+            if not self.rectify:
                 image = Image.open(os.path.join(self.data_dir, row.artifact_debayeredrgb_0_save_path))
-            except:
-                image = Image.new('RGB', (1944, 1204))
-            # label = Image.open(os.path.join(self.data_dir, row.annotation_pixelwise_0_save_path))
+            else:
+                data_path = os.path.join(self.data_dir, row.stereo_pipeline_npz_save_path)
+                img = np.load(data_path)['left']
+                image = normalize_image(img, hdr_mode=True, return_8_bit=True)
+        except:
+            image = Image.new('RGB', (1944, 1204))
+        # label = Image.open(os.path.join(self.data_dir, row.annotation_pixelwise_0_save_path))
         image = self.transform(image)
         
         # get label
-        if phase == 'train':
+        if self.phase == 'train':
             if BINARY_LABEL:
                 label = np.array([row[sub] >= thres for sub,thres in categorical_labels]).astype(np.float32)
             else:
@@ -200,6 +204,7 @@ if __name__ == '__main__':
     ])
 
     transform_test = transforms.Compose([
+        # transforms.ToPILImage(),
         transforms.Resize((512,1024)),
         transforms.ToTensor(),
         # transforms.Normalize((0.3374, 0.3408, 0.3932), (0.2072, 0.2146, 0.2453)),
@@ -254,9 +259,12 @@ if __name__ == '__main__':
         # dataset = '20240119_halo_rgb_stereo'
         # dataset = '20231219_halo_rgb_stereo'
         # dataset = 'halo_rgb_stereo_test_v6_1'
-        dataset = 'halo_potential_airborne_debris_from_train_6_2'
-        data_dir = f'/data2/jupiter/datasets/{dataset}/'
-        # csv_path = os.path.join(data_dir, 'master_annotations_dedup.csv')
+        # dataset = 'halo_potential_airborne_debris_from_train_6_2'
+        dataset = 'halo_potential_birds_from_train_8_1'
+        # dataset = '20240312_2_million_for_model_positive_pipeline_part_6_stereo'
+        data_dir = f'/data/jupiter/datasets/{dataset}/'
+        # data_dir = f'/data2/jupiter/datasets/{dataset}/'
+        # csv_path = os.path.join(data_dir, 'master_annotations.csv')
         # csv_path = os.path.join(data_dir, 'annotations_left.csv')
         csv_path = os.path.join(data_dir, 'annotations.csv')
         save_dir = f'/data/jupiter/li.yu/exps/driveable_terrain_model/{run_id}/{dataset}'
