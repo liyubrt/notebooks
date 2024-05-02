@@ -6,6 +6,13 @@
 import os
 from brtdevkit.data import Dataset
 
+"""
+eval "$(/home/li.yu/anaconda3/bin/conda shell.bash hook)"
+conda activate brtdevkit
+# run this on cmd: 
+brt-devkit-auth
+"""
+
 dataset_name = '20240301_5_million_for_self_supervised_part_0'
 # dataset_name = 'halo_sample_subset'
 dataset_dir = os.path.join('/data/jupiter/datasets', dataset_name)
