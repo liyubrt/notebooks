@@ -7,10 +7,11 @@ import os
 from brtdevkit.data import Dataset
 
 """
+# run this on cmd: 
 eval "$(/home/li.yu/anaconda3/bin/conda shell.bash hook)"
 conda activate brtdevkit
-# run this on cmd: 
 brt-devkit-auth
+aws sso login --profile jupiter_prod_engineer-425642425116
 """
 
 dataset_name = '20240301_5_million_for_self_supervised_part_0'
