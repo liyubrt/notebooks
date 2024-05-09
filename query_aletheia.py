@@ -6,8 +6,7 @@
 import os
 from brtdevkit.data import Dataset
 
-"""
-# run this on cmd: 
+""" # run this on cmd: 
 eval "$(/home/li.yu/anaconda3/bin/conda shell.bash hook)"
 conda activate brtdevkit
 brt-devkit-auth
