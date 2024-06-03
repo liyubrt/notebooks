@@ -34,8 +34,8 @@ root_dir = '/data2/jupiter/datasets/oncal_fix/'
 # dataset = 'halo_vehicles_driving_through_dust_images_nodust_reserved_labeled'
 dataset = 'halo_rgb_stereo_train_v8_1_max_fov_alleysson'
 # csv = os.path.join(root_dir, dataset, 'master_annotations_mhc.csv')
-csv = os.path.join(root_dir, dataset, 'annotations.csv')
-# csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
+# csv = os.path.join(root_dir, dataset, 'annotations.csv')
+csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
 converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
 df = pd.read_csv(csv, converters=converters)
 print(df.shape)
@@ -65,18 +65,25 @@ def variance_of_laplacian(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     return cv2.Laplacian(gray, cv2.CV_64F).var()
 
-def variance_of_laplacian_from_file(root_dir, dataset, row):
+def variance_of_laplacian_from_file(root_dir, dataset, row, debayered_rgb=False):
     try:
-        image = cv2.imread(os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path))
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        if debayered_rgb:
+            image = cv2.imread(os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path))
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            data_path = os.path.join(root_dir, dataset, row.stereo_pipeline_npz_save_path)
+            img = np.load(data_path)['left']
+            image = normalize_image(img, hdr_mode=True, return_8_bit=True)
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         return cv2.Laplacian(gray, cv2.CV_64F).var()
     except:
         return 0
 
 if not 'variance_of_laplacian' in df:
-    # iq_blurry_csv = os.path.join(root_dir, dataset, 'iq_blurry.csv')
-    iq_blurry_csv = os.path.join('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test', 'train_v8_1_iq_blurry.csv')
+    # iq_blurry_csv = os.path.join(root_dir, dataset, 'iq_blurry_rectified.csv')
+    iq_blurry_csv = os.path.join('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test', 'train_v8_1_iq_blurry_rectified.csv')
     if os.path.isfile(iq_blurry_csv):
+        print('loading label from', iq_blurry_csv)
         iq_blurry_df = pd.read_csv(iq_blurry_csv)
         df = df.merge(iq_blurry_df, on='id')
     else:
@@ -88,3 +95,4 @@ if not 'variance_of_laplacian' in df:
         if 'iq_blurry' in df:
             cols.append('iq_blurry')
         df[cols].to_csv(iq_blurry_csv, index=False)
+        print('saving label to', iq_blurry_csv)

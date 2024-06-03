@@ -13,7 +13,7 @@ brt-devkit-auth
 aws sso login --profile jupiter_prod_engineer-425642425116
 """
 
-dataset_name = '20240301_5_million_for_self_supervised_part_0'
+dataset_name = 'halo_human_in_dust_day_collection_may29'
 # dataset_name = 'halo_sample_subset'
 dataset_dir = os.path.join('/data/jupiter/datasets', dataset_name)
 # dataset_dir = os.path.join('/data/jupiter/li.yu/data', dataset_name)
