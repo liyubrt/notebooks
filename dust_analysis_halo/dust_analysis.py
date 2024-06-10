@@ -30,9 +30,24 @@ def print_seg_performance(pred_df, model_desc):
     tn = sum(pred_df.state == 'true_negative')
     fp = sum(pred_df.state == 'false_positive')
     fn = sum(pred_df.state == 'false_negative')
-    recall = tp / (tp + fn)
-    productivity = tn / (tn + fp)
+    recall = tp / (tp + fn + 1e-6)
+    productivity = tn / (tn + fp + 1e-6)
     print(f'{model_desc}: TP {tp}, TN {tn}, FP {fp}, FN {fn}, Recall {recall:.4f}, Productivity {productivity:.4f}')
+
+# def print_seg_dust_performance(df, model_desc):
+#     tp_df = df[(df.state == 'true_positive')]
+#     tn_df = df[(df.state == 'true_negative')]
+#     fp_df = df[(df.state == 'false_positive')]
+#     fn_df = df[(df.state == 'false_negative')]
+#     tp_dust_df = df[df.unique_id.isin(tp_df.unique_id)]
+#     tn_dust_df = df[df.unique_id.isin(tn_df.unique_id)]
+#     fp_dust_df = df[df.unique_id.isin(fp_df.unique_id)]
+#     fn_dust_df = df[df.unique_id.isin(fn_df.unique_id)]
+#     recall = len(tp_df) / (len(tp_df) + len(fn_df) + 1e-6)
+#     productivity = len(tn_df) / (len(tn_df) + len(fp_df) + 1e-6)
+#     print(f'{model_desc}: TP {len(tp_df)}, TN {len(tn_df)}, FP {len(fp_df)}, FN {len(fn_df)}, Recall {recall:.4f}, Productivity {productivity:.4f}')
+#     print(f'{model_desc} dust: TP {tp_dust_df.total_averaged_dust_conf.mean():.2f}, TN {tn_dust_df.total_averaged_dust_conf.mean():.2f}, FP {fp_dust_df.total_averaged_dust_conf.mean():.2f}, FN {fn_dust_df.total_averaged_dust_conf.mean():.2f}')
+
 
 def print_seg_dust_performance(pred_df, dust_df, model_desc):
     tp_df = pred_df[(pred_df.state == 'true_positive')]
@@ -43,8 +58,8 @@ def print_seg_dust_performance(pred_df, dust_df, model_desc):
     tn_dust_df = dust_df[dust_df.unique_id.isin(tn_df.unique_id)]
     fp_dust_df = dust_df[dust_df.unique_id.isin(fp_df.unique_id)]
     fn_dust_df = dust_df[dust_df.unique_id.isin(fn_df.unique_id)]
-    recall = len(tp_df) / (len(tp_df) + len(fn_df))
-    productivity = len(tn_df) / (len(tn_df) + len(fp_df))
+    recall = len(tp_df) / (len(tp_df) + len(fn_df) + 1e-6)
+    productivity = len(tn_df) / (len(tn_df) + len(fp_df) + 1e-6)
     print(f'{model_desc}: TP {len(tp_df)}, TN {len(tn_df)}, FP {len(fp_df)}, FN {len(fn_df)}, Recall {recall:.4f}, Productivity {productivity:.4f}')
     print(f'{model_desc} dust: TP {tp_dust_df.total_averaged_dust_conf.mean():.2f}, TN {tn_dust_df.total_averaged_dust_conf.mean():.2f}, FP {fp_dust_df.total_averaged_dust_conf.mean():.2f}, FN {fn_dust_df.total_averaged_dust_conf.mean():.2f}')
 
@@ -56,6 +71,14 @@ def get_seg_dust_performance_by_time(raw_df, pred_df, dust_df, model_desc):
     print(day_pred_df.shape, night_pred_df.shape)
     print_seg_dust_performance(day_pred_df, dust_df, model_desc + ' day')
     print_seg_dust_performance(night_pred_df, dust_df, model_desc + ' night')
+
+def get_seg_dust_performance_by_camera_pod(raw_df, pred_df, dust_df, model_desc, camera_pods):
+    raw_df2 = raw_df.drop(['state', 'camera_location'], axis=1)
+    pred_df = pred_df.merge(raw_df2, on='unique_id')
+    for pod, cameras in camera_pods.items():
+        pod_df = pred_df[pred_df.camera_location.isin(cameras)]
+        print(pod, pod_df.shape)
+        print_seg_dust_performance(pod_df, dust_df, model_desc + f' {pod}')
 
 def read_raw_image(root_dir, dataset, row):
     return imageio.imread(os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path))
