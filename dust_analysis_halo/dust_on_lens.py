@@ -25,17 +25,19 @@ from dust_analysis import left_pass_pairs, right_pass_pairs, read_raw_image, rea
 
 
 # root_dir = '/data/jupiter/li.yu/data'
-# root_dir = '/data/jupiter/datasets/'
+root_dir = '/data/jupiter/datasets/'
 # root_dir = '/data2/jupiter/datasets/'
 # root_dir = '/data2/jupiter/datasets/rev1_ask_ben_cline_before_deleting'
-root_dir = '/data2/jupiter/datasets/oncal_fix/'
+# root_dir = '/data2/jupiter/datasets/oncal_fix/'
 # dataset = 'halo_failure_case_of_box_in_dust'
 # dataset = 'humans_on_path_test_set_2023_v15_anno'
 # dataset = 'halo_vehicles_driving_through_dust_images_nodust_reserved_labeled'
-dataset = 'halo_rgb_stereo_train_v8_1_max_fov_alleysson'
+# dataset = 'halo_rgb_stereo_train_v8_1_max_fov_alleysson'
+# dataset = 'halo_vehicles_in_dust_collection_june06'
+dataset = 'halo_human_in_dust_night_collection_june03_2'
 # csv = os.path.join(root_dir, dataset, 'master_annotations_mhc.csv')
-# csv = os.path.join(root_dir, dataset, 'annotations.csv')
-csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
+csv = os.path.join(root_dir, dataset, 'annotations.csv')
+# csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
 converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
 df = pd.read_csv(csv, converters=converters)
 print(df.shape)
@@ -65,7 +67,7 @@ def variance_of_laplacian(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     return cv2.Laplacian(gray, cv2.CV_64F).var()
 
-def variance_of_laplacian_from_file(root_dir, dataset, row, debayered_rgb=False):
+def variance_of_laplacian_from_file(root_dir, dataset, row, debayered_rgb=True):
     try:
         if debayered_rgb:
             image = cv2.imread(os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path))
@@ -80,15 +82,15 @@ def variance_of_laplacian_from_file(root_dir, dataset, row, debayered_rgb=False)
         return 0
 
 if not 'variance_of_laplacian' in df:
-    # iq_blurry_csv = os.path.join(root_dir, dataset, 'iq_blurry_rectified.csv')
-    iq_blurry_csv = os.path.join('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test', 'train_v8_1_iq_blurry_rectified.csv')
+    iq_blurry_csv = os.path.join(root_dir, dataset, 'iq_blurry_debayered.csv')
+    # iq_blurry_csv = os.path.join('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test', 'train_v8_1_iq_blurry_rectified.csv')
     if os.path.isfile(iq_blurry_csv):
         print('loading label from', iq_blurry_csv)
         iq_blurry_df = pd.read_csv(iq_blurry_csv)
         df = df.merge(iq_blurry_df, on='id')
     else:
         # df['variance_of_laplacian'] = df.apply(lambda r: variance_of_laplacian_from_file(root_dir, dataset, r), axis=1)
-        pandarallel.initialize(nb_workers=8, progress_bar=False)
+        pandarallel.initialize(nb_workers=8, progress_bar=True)
         df['variance_of_laplacian'] = df.parallel_apply(lambda r: variance_of_laplacian_from_file(root_dir, dataset, r), axis=1)
 
         cols = ['id', 'variance_of_laplacian']
