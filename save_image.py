@@ -163,26 +163,44 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
 
 
 # root_dir = '/data/jupiter/li.yu/data'
-# root_dir = '/data/jupiter/datasets/'
-root_dir = '/data2/jupiter/datasets/'
-dataset = 'rev1_train_v6_2'
+root_dir = '/data/jupiter/datasets/'
+# root_dir = '/data2/jupiter/datasets/'
+dataset = 'halo_dust_on_lens_blur_dataset_v3_20240807'
 # dataset = 'halo_rgb_stereo_train_v8_0'
-csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
+csv = os.path.join(root_dir, dataset, 'annotations.csv')
+# csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
 # converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
 converters = {}
 df = pd.read_csv(csv, converters=converters)
 logging.info(f'{df.shape}')
 
-save_dir = '/data/jupiter/datasets/20240301_5_million_for_self_supervised_part_0'
-rectified_dir = os.path.join(save_dir, 'rev1_train')
-os.makedirs(rectified_dir, exist_ok=True)
-for i,row in df.iterrows():
-    data_path = os.path.join(root_dir, dataset, row.stereo_pipeline_npz_save_path)
-    img = np.load(data_path)['left']
-    img_norm = normalize_image(img, hdr_mode=row.hdr_mode, return_8_bit=True)
-    Image.fromarray(img_norm).save(os.path.join(rectified_dir, row.unique_id+'.jpg'))
-    if (i+1) % 2000 == 0:
+sample_csv = os.path.join(root_dir, dataset, 'iq_fn_depth_smudge_halo_dust_on_lens_blur_dataset_v3_20240807.csv')
+sdf = pd.read_csv(sample_csv)
+sdf['id'] = sdf['unique_id'].apply(lambda s: s[:-8])
+df = df[df.id.isin(sdf.id)]
+logging.info(f'{df.shape}')
+
+# save_dir = '/data/jupiter/datasets/20240301_5_million_for_self_supervised_part_0'
+# rectified_dir = os.path.join(save_dir, 'rev1_train')
+# os.makedirs(rectified_dir, exist_ok=True)
+# for i,row in df.iterrows():
+#     data_path = os.path.join(root_dir, dataset, row.stereo_pipeline_npz_save_path)
+#     img = np.load(data_path)['left']
+#     img_norm = normalize_image(img, hdr_mode=row.hdr_mode, return_8_bit=True)
+#     Image.fromarray(img_norm).save(os.path.join(rectified_dir, row.unique_id+'.jpg'))
+#     if (i+1) % 2000 == 0:
+#         logging.info(f'processed {i+1} images')
+# saved_ids = df.unique_id.to_list()
+# saved_df = pd.DataFrame(data={'id': [f'rev1_train/{f}.jpg' for f in saved_ids]})
+# saved_df.to_csv(os.path.join(save_dir, 'rev1_train_saved_ids.csv'), index=False)
+
+save_dir = os.path.join(root_dir, dataset, 'fns')
+os.makedirs(save_dir, exist_ok=True)
+i = 0
+for _, row in df.iterrows():
+    img_path = os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path)
+    img = cv2.imread(img_path)
+    cv2.imwrite(os.path.join(save_dir, f'{row.id}.jpg'), img)
+    if (i+1) % 200 == 0:
         logging.info(f'processed {i+1} images')
-saved_ids = df.unique_id.to_list()
-saved_df = pd.DataFrame(data={'id': [f'rev1_train/{f}.jpg' for f in saved_ids]})
-saved_df.to_csv(os.path.join(save_dir, 'rev1_train_saved_ids.csv'), index=False)
+    i += 1
