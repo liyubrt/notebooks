@@ -116,3 +116,5 @@ for pod, cameras in all_cameras.items():
             img_path = os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path)
             img = cv2.imread(img_path)
             cv2.imwrite(os.path.join(sub_save_dir, f'{row.id}.jpg'), img)
+            # rename image
+            os.rename(os.path.join(sub_save_dir, f'{row.id}.jpg'), os.path.join(sub_save_dir, f'{row.camera_location}_{row.id}.jpg'))
