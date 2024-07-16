@@ -12,105 +12,9 @@ from PIL import Image
 from collections import defaultdict
 from tqdm import tqdm
 from pprint import pprint
-
-
-DEFAULT_TONEMAP_PARAMS = {"policy": "tonemap", "alpha": 0.25, "beta": 0.9, "gamma": 0.9, "eps": 1e-6}
-def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_PARAMS, return_8_bit=False):
-    """
-    Normalize an 8 bit image according to the specified policy.
-    If return_8_bit, this returns an np.uint8 image, otherwise it returns a floating point
-    image with values in [0, 1].
-    """
-    normalization_policy = normalization_params['policy']
-    lower_bound = 0
-    upper_bound = 1
-    if np.isnan(hdr_mode):
-        hdr_mode = False
-
-    if hdr_mode and image.dtype == np.uint8:
-        # The image was normalized during pack-perception (tonemap)
-        if return_8_bit:
-            return image
-        lower_bound = 0.0
-        upper_bound = 255.0
-    elif normalization_policy == "percentile" and hdr_mode:
-        lower_bound = np.array([np.percentile(image[..., i],
-                                              normalization_params['lower_bound'],
-                                              interpolation='lower')
-                                for i in range(3)])
-        upper_bound = np.array([np.percentile(image[..., i],
-                                              normalization_params['upper_bound'],
-                                              interpolation='lower')
-                                for i in range(3)])
-    elif normalization_policy == "percentile_vpu" and hdr_mode:
-        r, g, b = image[..., 0], image[..., 1], image[..., 2]
-        brightness = (3 * r + b + 4 * g) / 8
-        lower_bound = np.percentile(brightness, normalization_params['lower_bound'],
-                                    interpolation='lower')
-        upper_bound = np.percentile(brightness, normalization_params['upper_bound'],
-                                    interpolation='lower')
-    elif normalization_policy == "3sigma" and hdr_mode:
-        sigma_size = normalization_params['sigma_size']
-        min_variance = normalization_params['min_variance']
-        r, g, b = image[..., 0], image[..., 1], image[..., 2]
-        brightness = (3 * r + b + 4 * g) / 8
-        mean, sigma = np.mean(brightness), np.std(brightness)
-        brightness_min, brightness_max = np.min(brightness), np.max(brightness)
-        if (sigma * sigma_size) > mean:
-            lmin = brightness_min
-            lmax = min(brightness_max, mean * sigma_size)
-            if (lmax - lmin) < min_variance:
-                lmax = lmin + min_variance
-            lower_bound = lmin
-            upper_bound = lmax
-        else:
-            mean_var = mean - sigma_size * sigma
-            output_min = max(brightness_min, mean_var)
-            mean_var = mean + sigma_size * sigma
-            output_max = min(brightness_max, mean_var)
-            if (output_max - output_min) < min_variance:
-                output_min = mean - min_variance / 2.0
-                output_min = 0 if output_min < 0 else output_min
-                output_max = output_min + min_variance
-            lower_bound = output_min
-            upper_bound = output_max
-    elif normalization_policy == 'tonemap' and hdr_mode:
-        if image.dtype != np.float32 and image.dtype != np.uint32:
-            raise ValueError('HDR image type is {} instead of float32 or uint32'.format(image.dtype))
-        alpha = normalization_params.get('alpha', DEFAULT_TONEMAP_PARAMS['alpha'])
-        beta = normalization_params.get('beta', DEFAULT_TONEMAP_PARAMS['beta'])
-        gamma = normalization_params.get('gamma', DEFAULT_TONEMAP_PARAMS['gamma'])
-        eps = normalization_params.get('eps', DEFAULT_TONEMAP_PARAMS['eps'])
-
-        r, g, b = image[..., 0], image[..., 1], image[..., 2]
-        lum_in = 0.2126 * r + 0.7152 * g + 0.0722 * b
-        lum_norm = np.exp(gamma * np.mean(np.log(lum_in + eps)))
-        c = alpha * lum_in / lum_norm
-        c_max = beta * np.max(c)
-        lum_out = c / (1 + c) * (1 + c / (c_max ** 2))
-        image = image * (lum_out / (lum_in + eps))[..., None]
-    elif normalization_policy == "none" and hdr_mode:
-        lower_bound = 0.0
-        upper_bound = 2**20 - 1
-    elif normalization_policy == "default" or not hdr_mode:
-        assert np.max(image) <= 255 and np.min(image) >= 0, "Image with default " \
-            "mode should be in range [0,255]"
-        lower_bound = 0.0
-        upper_bound = 255.0
-    else:
-        raise ValueError(
-            f"--normalization-policy '{normalization_policy}' is not supported! "
-            f"(on image with hdr_mode={hdr_mode})")
-
-    image = (image.astype(np.float32, copy=False) - lower_bound) / (upper_bound - lower_bound)
-
-    if return_8_bit:
-        image = np.clip(image * 255.0, 0.0, 255.0)
-        image = np.uint8(image)
-    else:
-        image = np.clip(image, 0.0, 1.0)
-
-    return image
+import sys
+sys.path.append('./')
+from utils import normalize_image, get_sequences
 
 
 # data_root_dir = '/data/jupiter/li.yu/data'
@@ -163,7 +67,7 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
 
 
 # root_dir = '/data/jupiter/li.yu/data'
-root_dir = '/data/jupiter/datasets/'
+root_dir = '/data/jupiter/datasets/dust_datasets'
 # root_dir = '/data2/jupiter/datasets/'
 dataset = 'halo_dust_on_lens_blur_dataset_v3_20240807'
 # dataset = 'halo_rgb_stereo_train_v8_0'
@@ -174,11 +78,11 @@ converters = {}
 df = pd.read_csv(csv, converters=converters)
 logging.info(f'{df.shape}')
 
-sample_csv = os.path.join(root_dir, dataset, 'iq_fn_depth_smudge_halo_dust_on_lens_blur_dataset_v3_20240807.csv')
-sdf = pd.read_csv(sample_csv)
-sdf['id'] = sdf['unique_id'].apply(lambda s: s[:-8])
-df = df[df.id.isin(sdf.id)]
-logging.info(f'{df.shape}')
+# sample_csv = os.path.join(root_dir, dataset, 'iq_fn_depth_smudge_halo_dust_on_lens_blur_dataset_v3_20240807.csv')
+# sdf = pd.read_csv(sample_csv)
+# sdf['id'] = sdf['unique_id'].apply(lambda s: s[:-8])
+# df = df[df.id.isin(sdf.id)]
+# logging.info(f'{df.shape}')
 
 # save_dir = '/data/jupiter/datasets/20240301_5_million_for_self_supervised_part_0'
 # rectified_dir = os.path.join(save_dir, 'rev1_train')
@@ -194,13 +98,21 @@ logging.info(f'{df.shape}')
 # saved_df = pd.DataFrame(data={'id': [f'rev1_train/{f}.jpg' for f in saved_ids]})
 # saved_df.to_csv(os.path.join(save_dir, 'rev1_train_saved_ids.csv'), index=False)
 
-save_dir = os.path.join(root_dir, dataset, 'fns')
+seq_dfs = get_sequences(df, interval=60)  # break the data by intervals between sequences
+print(df.shape, len(seq_dfs))
+all_cameras = {'front': ['T01', 'T02', 'T03', 'T04'], 'right': ['T05', 'T06', 'T07', 'T08'], 'back': ['T09', 'T10', 'T11', 'T12'], 'left': ['T13', 'T14', 'T15', 'T16']}
+save_dir = os.path.join(root_dir, dataset, 'all_in_seqs')
 os.makedirs(save_dir, exist_ok=True)
-i = 0
-for _, row in df.iterrows():
-    img_path = os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path)
-    img = cv2.imread(img_path)
-    cv2.imwrite(os.path.join(save_dir, f'{row.id}.jpg'), img)
-    if (i+1) % 200 == 0:
-        logging.info(f'processed {i+1} images')
-    i += 1
+for pod, cameras in all_cameras.items():
+    print(pod, cameras)
+    for i,seq_df in enumerate(seq_dfs):
+        cam_df = seq_df[seq_df.camera_location.isin(cameras)]
+        if len(cam_df) == 0:
+            continue
+        print(pod, i, len(cam_df))
+        sub_save_dir = os.path.join(save_dir, f'{pod}_{str(i).zfill(2)}')
+        os.makedirs(sub_save_dir, exist_ok=True)
+        for _, row in cam_df.iterrows():
+            img_path = os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path)
+            img = cv2.imread(img_path)
+            cv2.imwrite(os.path.join(sub_save_dir, f'{row.id}.jpg'), img)
