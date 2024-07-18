@@ -25,16 +25,16 @@ from dust_analysis import left_pass_pairs, right_pass_pairs, read_raw_image, rea
 
 
 # root_dir = '/data/jupiter/li.yu/data'
-root_dir = '/data/jupiter/datasets/'
+# root_dir = '/data/jupiter/datasets/'
+root_dir = '/data/jupiter/datasets/dust_datasets'
 # root_dir = '/data2/jupiter/datasets/'
-# root_dir = '/data2/jupiter/datasets/rev1_ask_ben_cline_before_deleting'
-# root_dir = '/data2/jupiter/datasets/oncal_fix/'
 # dataset = 'halo_failure_case_of_box_in_dust'
 # dataset = 'humans_on_path_test_set_2023_v15_anno'
 # dataset = 'halo_vehicles_driving_through_dust_images_nodust_reserved_labeled'
 # dataset = 'halo_rgb_stereo_train_v8_1_max_fov_alleysson'
 # dataset = 'halo_vehicles_in_dust_collection_june06'
-dataset = 'halo_human_in_dust_night_collection_june03_2'
+# dataset = 'halo_human_in_dust_night_collection_june03_2'
+dataset = 'halo_dust_on_lens_blur_dataset_v3_20240807'
 # csv = os.path.join(root_dir, dataset, 'master_annotations_mhc.csv')
 csv = os.path.join(root_dir, dataset, 'annotations.csv')
 # csv = os.path.join(root_dir, dataset, 'master_annotations.csv')

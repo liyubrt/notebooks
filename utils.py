@@ -102,7 +102,7 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
     return image
 
 
-def get_sequences(df, interval=5*60, per_camera=False):
+def get_sequences(df, interval=5*60, per_camera=False, per_camera_pair=False):
     df = df.sort_values('collected_on')
     df['datetime'] = df.collected_on.apply(datetime.fromisoformat)
     sequence_dfs = []
@@ -122,6 +122,14 @@ def get_sequences(df, interval=5*60, per_camera=False):
                     camera_locations.sort()
                     for camera_location in camera_locations:
                         sequence_df = chunk_df[chunk_df.camera_location == camera_location]
+                        sequence_df = sequence_df.sort_values('collected_on')
+                        sequence_dfs.append(sequence_df)
+                elif per_camera_pair:  # assume from master csv
+                    chunk_df['camera_pair'] = chunk_df['unique_id'].apply(lambda s: s[-7:])
+                    camera_pairs = chunk_df.camera_pair.unique()
+                    camera_pairs.sort()
+                    for camera_pair in camera_pairs:
+                        sequence_df = chunk_df[chunk_df.camera_pair == camera_pair]
                         sequence_df = sequence_df.sort_values('collected_on')
                         sequence_dfs.append(sequence_df)
                 else:
