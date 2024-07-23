@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
@@ -104,7 +105,10 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
 
 def get_sequences(df, interval=5*60, per_camera=False, per_camera_pair=False):
     df = df.sort_values('collected_on')
-    df['datetime'] = df.collected_on.apply(datetime.fromisoformat)
+    if isinstance(df.iloc[0].collected_on, pd._libs.tslibs.timestamps.Timestamp):
+        df['datetime'] = df.collected_on
+    else:
+        df['datetime'] = df.collected_on.apply(datetime.fromisoformat)
     sequence_dfs = []
     delta = timedelta(seconds=interval)
     start = True
@@ -140,6 +144,20 @@ def get_sequences(df, interval=5*60, per_camera=False, per_camera_pair=False):
                 t0 = t1
         i += 1
     return sequence_dfs
+
+
+def sample_per_min_per_camera(df, per_min_limit=30, per_camera=False):
+    seq_dfs = get_sequences(df, interval=60, per_camera=per_camera)  # break the data by intervals between sequences
+    print(df.shape, len(seq_dfs))
+    selected_dfs = []
+    for i, seq_df in enumerate(seq_dfs):
+        time_span = (seq_df.iloc[-1].datetime - seq_df.iloc[0].datetime).total_seconds()
+        limit_ids = int(time_span / 60 * per_min_limit)
+        selected_dfs.append(seq_df.sample(min(len(seq_df), limit_ids)))
+        print(i, seq_df.iloc[0].datetime, time_span, len(seq_df), limit_ids)
+    selected_df = pd.concat(selected_dfs, ignore_index=True)
+    print(df.shape, selected_df.shape)
+    return selected_df
 
 
 def plot_image(img, figsize=(12, 6)):
