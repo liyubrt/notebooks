@@ -5,16 +5,21 @@ from datetime import datetime, timedelta
 
 
 DEFAULT_TONEMAP_PARAMS = {"policy": "tonemap", "alpha": 0.25, "beta": 0.9, "gamma": 0.9, "eps": 1e-6}
-def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_PARAMS, return_8_bit=False):
+def normalize_image(
+    image: np.ndarray,
+    hdr_mode: bool = True,
+    normalization_params: dict = DEFAULT_TONEMAP_PARAMS,
+    return_8_bit: bool = False,
+) -> np.ndarray:
     """
     Normalize an 8 bit image according to the specified policy.
     If return_8_bit, this returns an np.uint8 image, otherwise it returns a floating point
     image with values in [0, 1].
     """
-    normalization_policy = normalization_params['policy']
-    lower_bound = 0
-    upper_bound = 1
-    if np.isnan(hdr_mode):
+    normalization_policy = normalization_params["policy"]
+    lower_bound = 0.0
+    upper_bound = 1.0
+    if pd.isnull(hdr_mode):
         hdr_mode = False
 
     if hdr_mode and image.dtype == np.uint8:
@@ -24,24 +29,34 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
         lower_bound = 0.0
         upper_bound = 255.0
     elif normalization_policy == "percentile" and hdr_mode:
-        lower_bound = np.array([np.percentile(image[..., i],
-                                              normalization_params['lower_bound'],
-                                              interpolation='lower')
-                                for i in range(3)])
-        upper_bound = np.array([np.percentile(image[..., i],
-                                              normalization_params['upper_bound'],
-                                              interpolation='lower')
-                                for i in range(3)])
+        lower_bound = np.array(
+            [
+                np.percentile(
+                    image[..., i], normalization_params["lower_bound"], interpolation="lower"
+                )
+                for i in range(3)
+            ]
+        )
+        upper_bound = np.array(
+            [
+                np.percentile(
+                    image[..., i], normalization_params["upper_bound"], interpolation="lower"
+                )
+                for i in range(3)
+            ]
+        )
     elif normalization_policy == "percentile_vpu" and hdr_mode:
         r, g, b = image[..., 0], image[..., 1], image[..., 2]
         brightness = (3 * r + b + 4 * g) / 8
-        lower_bound = np.percentile(brightness, normalization_params['lower_bound'],
-                                    interpolation='lower')
-        upper_bound = np.percentile(brightness, normalization_params['upper_bound'],
-                                    interpolation='lower')
+        lower_bound = np.percentile(
+            brightness, normalization_params["lower_bound"], interpolation="lower"
+        )
+        upper_bound = np.percentile(
+            brightness, normalization_params["upper_bound"], interpolation="lower"
+        )
     elif normalization_policy == "3sigma" and hdr_mode:
-        sigma_size = normalization_params['sigma_size']
-        min_variance = normalization_params['min_variance']
+        sigma_size = normalization_params["sigma_size"]
+        min_variance = normalization_params["min_variance"]
         r, g, b = image[..., 0], image[..., 1], image[..., 2]
         brightness = (3 * r + b + 4 * g) / 8
         mean, sigma = np.mean(brightness), np.std(brightness)
@@ -64,33 +79,37 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
                 output_max = output_min + min_variance
             lower_bound = output_min
             upper_bound = output_max
-    elif normalization_policy == 'tonemap' and hdr_mode:
+    elif normalization_policy == "tonemap" and hdr_mode:
         if image.dtype != np.float32 and image.dtype != np.uint32:
-            raise ValueError('HDR image type is {} instead of float32 or uint32'.format(image.dtype))
-        alpha = normalization_params.get('alpha', DEFAULT_TONEMAP_PARAMS['alpha'])
-        beta = normalization_params.get('beta', DEFAULT_TONEMAP_PARAMS['beta'])
-        gamma = normalization_params.get('gamma', DEFAULT_TONEMAP_PARAMS['gamma'])
-        eps = normalization_params.get('eps', DEFAULT_TONEMAP_PARAMS['eps'])
+            raise ValueError(
+                "HDR image type is {} instead of float32 or uint32".format(image.dtype)
+            )
+        alpha = normalization_params.get("alpha", DEFAULT_TONEMAP_PARAMS["alpha"])
+        beta = normalization_params.get("beta", DEFAULT_TONEMAP_PARAMS["beta"])
+        gamma = normalization_params.get("gamma", DEFAULT_TONEMAP_PARAMS["gamma"])
+        eps = normalization_params.get("eps", DEFAULT_TONEMAP_PARAMS["eps"])
 
         r, g, b = image[..., 0], image[..., 1], image[..., 2]
         lum_in = 0.2126 * r + 0.7152 * g + 0.0722 * b
         lum_norm = np.exp(gamma * np.mean(np.log(lum_in + eps)))
         c = alpha * lum_in / lum_norm
         c_max = beta * np.max(c)
-        lum_out = c / (1 + c) * (1 + c / (c_max ** 2))
+        lum_out = c / (1 + c) * (1 + c / (c_max**2 + np.finfo(c.dtype).smallest_normal))
         image = image * (lum_out / (lum_in + eps))[..., None]
     elif normalization_policy == "none" and hdr_mode:
         lower_bound = 0.0
         upper_bound = 2**20 - 1
     elif normalization_policy == "default" or not hdr_mode:
-        assert np.max(image) <= 255 and np.min(image) >= 0, "Image with default " \
-            "mode should be in range [0,255]"
+        assert np.max(image) <= 255 and np.min(image) >= 0, (
+            "Image with default " "mode should be in range [0,255]"
+        )
         lower_bound = 0.0
         upper_bound = 255.0
     else:
         raise ValueError(
             f"--normalization-policy '{normalization_policy}' is not supported! "
-            f"(on image with hdr_mode={hdr_mode})")
+            f"(on image with hdr_mode={hdr_mode})"
+        )
 
     image = (image.astype(np.float32, copy=False) - lower_bound) / (upper_bound - lower_bound)
 
@@ -101,7 +120,6 @@ def normalize_image(image, hdr_mode=True, normalization_params=DEFAULT_TONEMAP_P
         image = np.clip(image, 0.0, 1.0)
 
     return image
-
 
 def get_sequences(df, interval=5*60, per_camera=False, per_camera_pair=False):
     df = df.sort_values('collected_on')

@@ -22,20 +22,21 @@ from utils import normalize_image, plot_image, plot_images
 # root_dir = '/data/jupiter/datasets/'
 root_dir = '/data2/jupiter/datasets/'
 # root_dir = '/data/jupiter/datasets/safety_datasets/'
-dataset = 'rev2_rgb_data_9_2_train_20240607_stereo'
+dataset = 'halo_rgb_stereo_train_v10_0'
 # dataset = 'humans/on_path_aft/on_path_aft_humans_day_2024_rev2_v16'
 # csv = os.path.join(root_dir, dataset, 'annotations.csv')
 # csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
-csv = os.path.join(root_dir, dataset, 'master_annotations_more_drops_cleaned_20240611_rev1_lying_down_sitting_drop_dups.csv')
-# converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
-converters = {"label_map": ast.literal_eval}
+csv = os.path.join(root_dir, dataset, 'master_annotations_more_drops_cleaned_20240611_rev1_lying_down_sitting_n_stop_events_rev2_no_drops.csv')
+converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
+# converters = {"label_map": ast.literal_eval}
 # converters = {}
 df = pd.read_csv(csv, converters=converters)
 print(df.shape)
 
-categorical_labels_map = {'objects': {'Utility pole', 'Immovable Objects', 'Buildings', 'Animals', 'Tile-Inlet'}, 'humans': {'Humans'}, 
-                            'vehicles': {'Tractors or Vehicles'}, 'dust': {'Heavy Dust'}, 'birds': {'Birds'}, 'airborne': {'Airborne Debris'},
-                            'unharvested_field': {'Unharvested Field'}, 'trees': {'Trees'}}
+categorical_labels_map = {'objects_pixel_count': {'Utility pole', 'Immovable Objects', 'Buildings', 'Animals', 'Tile-Inlet'}, 
+                          'humans_pixel_count': {'Humans'}, 'tractors_or_vehicles_pixel_count': {'Tractors or Vehicles'}, 
+                          'dust_pixel_count': {'Heavy Dust'}, 'birds_pixel_count': {'Birds'}, 'airborne_debris_pixel_count': {'Airborne Debris'},
+                          'unharvested_field_pixel_count': {'Unharvested Field'}, 'trees_pixel_count': {'Trees'}}
 cats = list(categorical_labels_map.keys())
 categorical_object_labels = {v for k,vs in categorical_labels_map.items() for v in vs}
 cats, categorical_object_labels
@@ -61,4 +62,4 @@ def get_categorical_labels(root_dir, dataset, row):
 pandarallel.initialize(nb_workers=8, progress_bar=True)
 df = df.parallel_apply(lambda r: get_categorical_labels(root_dir, dataset, r), axis=1)
 print(df.shape)
-df[['unique_id'] + cats].to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v9_2_categorical_count.csv', index=False)
+df[['unique_id'] + cats].to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v10_0_categorical_count.csv', index=False)
