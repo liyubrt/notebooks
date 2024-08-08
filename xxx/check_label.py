@@ -39,7 +39,7 @@ categorical_labels_map = {'objects_pixel_count': {'Utility pole', 'Immovable Obj
                           'unharvested_field_pixel_count': {'Unharvested Field'}, 'trees_pixel_count': {'Trees'}}
 cats = list(categorical_labels_map.keys())
 categorical_object_labels = {v for k,vs in categorical_labels_map.items() for v in vs}
-cats, categorical_object_labels
+print(cats, categorical_object_labels)
 
 def get_categorical_labels(root_dir, dataset, row):
     # # raw label
