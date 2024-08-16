@@ -13,10 +13,10 @@ brt-devkit-auth
 aws sso login --profile jupiter_prod_engineer-425642425116
 """
 
-dataset_name = 'Jupiter_bedrock_40013_20240617_dust_sequences'
+dataset_name = 'halohitchhiker_for_dust_analysis'
 # dataset_name = 'halo_sample_subset'
-dataset_dir = os.path.join('/data/jupiter/datasets/dust_datasets', dataset_name)
-# dataset_dir = os.path.join('/data/jupiter/li.yu/data', dataset_name)
+# dataset_dir = os.path.join('/data/jupiter/datasets/dust_datasets', dataset_name)
+dataset_dir = os.path.join('/data/jupiter/li.yu/data', dataset_name)
 os.makedirs(dataset_dir, exist_ok=True)
 
 test_dataset = Dataset.retrieve(name=dataset_name)
