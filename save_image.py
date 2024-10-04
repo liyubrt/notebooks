@@ -66,17 +66,17 @@ from utils import normalize_image, get_sequences
 
 
 
-# root_dir = '/data/jupiter/li.yu/data'
-root_dir = '/data/jupiter/datasets/dust_datasets'
-# root_dir = '/data2/jupiter/datasets/'
-dataset = 'halo_dust_on_lens_blur_dataset_v3_20240807'
-# dataset = 'halo_rgb_stereo_train_v8_0'
-csv = os.path.join(root_dir, dataset, 'annotations.csv')
-# csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
-# converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
-converters = {}
-df = pd.read_csv(csv, converters=converters)
-logging.info(f'{df.shape}')
+# # root_dir = '/data/jupiter/li.yu/data'
+# root_dir = '/data/jupiter/datasets/dust_datasets'
+# # root_dir = '/data2/jupiter/datasets/'
+# dataset = 'halo_dust_on_lens_blur_dataset_v3_20240807'
+# # dataset = 'halo_rgb_stereo_train_v8_0'
+# csv = os.path.join(root_dir, dataset, 'annotations.csv')
+# # csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
+# # converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
+# converters = {}
+# df = pd.read_csv(csv, converters=converters)
+# logging.info(f'{df.shape}')
 
 # sample_csv = os.path.join(root_dir, dataset, 'iq_fn_depth_smudge_halo_dust_on_lens_blur_dataset_v3_20240807.csv')
 # sdf = pd.read_csv(sample_csv)
@@ -98,23 +98,46 @@ logging.info(f'{df.shape}')
 # saved_df = pd.DataFrame(data={'id': [f'rev1_train/{f}.jpg' for f in saved_ids]})
 # saved_df.to_csv(os.path.join(save_dir, 'rev1_train_saved_ids.csv'), index=False)
 
-seq_dfs = get_sequences(df, interval=60)  # break the data by intervals between sequences
-print(df.shape, len(seq_dfs))
-all_cameras = {'front': ['T01', 'T02', 'T03', 'T04'], 'right': ['T05', 'T06', 'T07', 'T08'], 'back': ['T09', 'T10', 'T11', 'T12'], 'left': ['T13', 'T14', 'T15', 'T16']}
-save_dir = os.path.join(root_dir, dataset, 'all_in_seqs')
-os.makedirs(save_dir, exist_ok=True)
-for pod, cameras in all_cameras.items():
-    print(pod, cameras)
-    for i,seq_df in enumerate(seq_dfs):
-        cam_df = seq_df[seq_df.camera_location.isin(cameras)]
-        if len(cam_df) == 0:
-            continue
-        print(pod, i, len(cam_df))
-        sub_save_dir = os.path.join(save_dir, f'{pod}_{str(i).zfill(2)}')
-        os.makedirs(sub_save_dir, exist_ok=True)
-        for _, row in cam_df.iterrows():
-            img_path = os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path)
-            img = cv2.imread(img_path)
-            cv2.imwrite(os.path.join(sub_save_dir, f'{row.id}.jpg'), img)
-            # rename image
-            os.rename(os.path.join(sub_save_dir, f'{row.id}.jpg'), os.path.join(sub_save_dir, f'{row.camera_location}_{row.id}.jpg'))
+# seq_dfs = get_sequences(df, interval=60)  # break the data by intervals between sequences
+# print(df.shape, len(seq_dfs))
+# all_cameras = {'front': ['T01', 'T02', 'T03', 'T04'], 'right': ['T05', 'T06', 'T07', 'T08'], 'back': ['T09', 'T10', 'T11', 'T12'], 'left': ['T13', 'T14', 'T15', 'T16']}
+# save_dir = os.path.join(root_dir, dataset, 'all_in_seqs')
+# os.makedirs(save_dir, exist_ok=True)
+# for pod, cameras in all_cameras.items():
+#     print(pod, cameras)
+#     for i,seq_df in enumerate(seq_dfs):
+#         cam_df = seq_df[seq_df.camera_location.isin(cameras)]
+#         if len(cam_df) == 0:
+#             continue
+#         print(pod, i, len(cam_df))
+#         sub_save_dir = os.path.join(save_dir, f'{pod}_{str(i).zfill(2)}')
+#         os.makedirs(sub_save_dir, exist_ok=True)
+#         for _, row in cam_df.iterrows():
+#             img_path = os.path.join(root_dir, dataset, row.artifact_debayeredrgb_0_save_path)
+#             img = cv2.imread(img_path)
+#             cv2.imwrite(os.path.join(sub_save_dir, f'{row.id}.jpg'), img)
+#             # rename image
+#             os.rename(os.path.join(sub_save_dir, f'{row.id}.jpg'), os.path.join(sub_save_dir, f'{row.camera_location}_{row.id}.jpg'))
+
+
+
+# download images with urls
+import requests
+from pandarallel import pandarallel
+def download_image(save_dir, row):
+    file_path = os.path.join(save_dir, row['Subset'], row['ImageID']+'.jpg')
+    if not os.path.isfile(file_path):
+        try:
+            img_data = requests.get(row['OriginalURL'], timeout=3).content
+            with open(file_path, 'wb') as handler:
+                handler.write(img_data)
+        except:
+            pass
+
+save_dir = '/data3/jupiter/datasets/public_datasets/OpenImages'
+for i in range(6, 10):
+    csv_file = f'/data3/jupiter/datasets/public_datasets/OpenImages/meta_data/image_ids_and_rotation_part{i}.csv'
+    df = pd.read_csv(csv_file, low_memory=False)
+    print(df.shape)
+    pandarallel.initialize(nb_workers=32, progress_bar=False)
+    df.parallel_apply(lambda r: download_image(save_dir, r), axis=1)
