@@ -1,0 +1,10 @@
+# python3 query_aletheia.py halo_data_pool_pt0_2023_month050607
+# python3 query_aletheia.py halo_data_pool_pt1_2023_month08
+# python3 query_aletheia.py halo_data_pool_pt2_2023_month09
+python3 query_aletheia.py halo_data_pool_pt3_2023_month10
+python3 query_aletheia.py halo_data_pool_pt4_2023_month11
+# python3 query_aletheia.py halo_data_pool_pt5_2023_month12_2024_month0102
+# python3 query_aletheia.py halo_data_pool_pt6_2024_month0304
+# python3 query_aletheia.py halo_data_pool_pt7_2024_month0506
+python3 query_aletheia.py halo_data_pool_pt8_2024_month0708
+# python3 query_aletheia.py halo_data_pool_pt9_2024_month09

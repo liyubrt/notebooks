@@ -126,7 +126,15 @@ import requests
 from pandarallel import pandarallel
 def download_image(save_dir, row):
     file_path = os.path.join(save_dir, row['Subset'], row['ImageID']+'.jpg')
+    need_download = False
     if not os.path.isfile(file_path):
+        need_download = True
+    else:
+        try:
+            img = Image.open(file_path)  # file broken
+        except:
+            need_download = True
+    if need_download:
         try:
             img_data = requests.get(row['OriginalURL'], timeout=3).content
             with open(file_path, 'wb') as handler:
@@ -135,9 +143,8 @@ def download_image(save_dir, row):
             pass
 
 save_dir = '/data3/jupiter/datasets/public_datasets/OpenImages'
-for i in range(6, 10):
-    csv_file = f'/data3/jupiter/datasets/public_datasets/OpenImages/meta_data/image_ids_and_rotation_part{i}.csv'
-    df = pd.read_csv(csv_file, low_memory=False)
-    print(df.shape)
-    pandarallel.initialize(nb_workers=32, progress_bar=False)
-    df.parallel_apply(lambda r: download_image(save_dir, r), axis=1)
+csv_file = f'/data3/jupiter/datasets/public_datasets/OpenImages/meta_data/image_ids_and_rotation.csv'
+df = pd.read_csv(csv_file, low_memory=False)
+print(df.shape)
+pandarallel.initialize(nb_workers=96, progress_bar=True)
+df.parallel_apply(lambda r: download_image(save_dir, r), axis=1)
