@@ -159,7 +159,7 @@ def check_jpg_file(jpg_dir, row):
 
 if len(sys.argv) > 1:
     i_list = sys.argv[1:]
-for i in i_list:
+for i in range(int(i_list[0]), int(i_list[1]), 150):
     data_dir = f'/data2/jupiter/datasets/coyo-700m-webdataset/'
     jpg_dir = os.path.join(data_dir, f'tar_{i}_{int(i)+150}')
     # data_dir = f'/data3/jupiter/datasets/large_datasets/Jupiter_al_phase3_pool_pt{i}'
