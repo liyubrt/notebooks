@@ -9,7 +9,7 @@ from brtdevkit.data import Dataset
 
 """ # run this on cmd: 
 eval "$(/home/li.yu/anaconda3/bin/conda shell.bash hook)"
-conda activate brtdevkit
+conda activate query
 brt-devkit-auth
 aws sso login --profile jupiter_prod_engineer-425642425116
 """
