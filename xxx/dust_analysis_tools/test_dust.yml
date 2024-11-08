@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../schema.json
+%YAML 1.2
+---
+_type_: kore.configs.roots.prediction.SegPredictionConfig
+model:
+  # _type_: kore.configs.tasks.semantic_segmentation.model_config.BRTResnetPyramidLite12Config
+  _type_: kore.configs.tasks.semantic_segmentation.model_config.NextViTSmallConfig
+  model_params: 
+    model_size: small
+    in_features: [[4, 256], [8, 256], [16, 256], [32, 256]]
+    structural_reparameterization_on_stem: false
+  dust:
+    dust_head_output: false
+    dust_seg_output: true
+  merge_stop_class_confidence_threshold: -1
+inputs:
+  input_shape: [512, 640]
+  input_mode: RECTIFIED_RGB
+  normalization:
+    _type_: kore.configs.data.input_data_config.TonemapNormalizationConfig
+  label:
+    # label_map_file: $EUROPA_DIR/dl/config/label_maps/label_map_nine_class_birds_as_birds.csv
+    # label_map_file: $EUROPA_DIR/dl/config/label_maps/eleven_class_train.csv
+    label_map_file: $EUROPA_DIR/dl/config/label_maps/label_map_eleven_class.csv
+    label_map_file_iq: $EUROPA_DIR/dl/config/label_maps/binary_dust.csv
+  output_type: 1
+  with_semantic_label: false
+data:
+  test_set:
+    dataset_name: halo_vehicles_driving_through_dust_images_nodust_reserved_labeled
+    csv: master_annotations.csv
+    dataset_path: /data2/jupiter/datasets/halo_vehicles_driving_through_dust_images_nodust_reserved_labeled
+    num_workers: 4
+    batch_size: 32
+ckpt_path: /data/jupiter/li.yu/exps/driveable_terrain_model/20676_r2_rgb_bigdecay_biglr/20676.ckpt
+output_dir: /data/jupiter/li.yu/exps/driveable_terrain_model/20676_r2_rgb_bigdecay_biglr/halo_vehicles_driving_through_dust_images_nodust_reserved_labeled
+states_to_save: []
+metrics:
+  gt_stop_classes_to_consider: ['Non-driveable', 'Trees_Weeds', 'Humans', 'Vehicles']
+  pred_stop_classes_to_consider: ['Non-driveable', 'Trees_Weeds', 'Humans', 'Vehicles']
+  use_depth_threshold: true
+  run_productivity_metrics: true
+  merge_stop_class_confidence_threshold: -1
+predictor:
+  precision: 32
