@@ -35,13 +35,7 @@ BEST_CHECKPOINT_PATH=/mnt/sandbox1/ben.cline/logs/bc_sandbox_2024_q4/dust113/${E
 
 # field dust test
 cd ${REPO_ROOT}
-# DATASET='halo_failure_case_of_box_in_dust'
-# DATASET='halo_fps_in_dust_candidates_stereo'
-# DATASET='dust_datasets/Jupiter_bedrock_40013_20240617_dust_sequences'
-# DATASET='dust_datasets/Jupiter_bedrock_40013_20240617_212424_box_in_dust_seq'
-# DATASET='dust_datasets/Jupiter_bedrock_40013_20240617_214449_lying_manny_in_dust_seq'
 DATASET='dust_datasets/halo_buildup_medium_dust_with_human_lo_gilroy_july29'
-# DATASET='halo_productivity_fps_in_dust_bedrock411_20240627'
 # DATASET='large_datasets/halo_data_pool_pt9_2024_month09_stereo'
 srun --kill-on-bad-exit python kore/scripts/predict_seg.py \
     --config_path /home/li.yu/code/scripts/test_dust.yml \
