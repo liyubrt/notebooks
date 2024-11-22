@@ -19,64 +19,64 @@ import matplotlib.pyplot as plt
 sys.path.append('../')
 from utils import normalize_image, plot_image, plot_images
 
-# # root_dir = '/data/jupiter/li.yu/data'
-# # root_dir = '/data/jupiter/datasets/'
-# # root_dir = '/data2/jupiter/datasets/'
-# root_dir = '/data3/jupiter/datasets/'
-# # root_dir = '/data/jupiter/datasets/safety_datasets/'
-# # dataset = 'halo_rgb_stereo_train_v10_0'
-# dataset = 'halo_rgb_stereo_train_v11_3'
-# # dataset = 'humans/on_path_aft/on_path_aft_humans_day_2024_rev2_v16'
-# # csv = os.path.join(root_dir, dataset, 'annotations.csv')
-# # csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
-# # csv = os.path.join(root_dir, dataset, 'master_annotations_more_drops_cleaned_20240611_rev1_lying_down_sitting_n_stop_events_n_night_dust_rev2_no_drops_w_label_counts.csv')
-# csv = os.path.join(root_dir, dataset, 'master_annotations_full_cleaned_rev1_train_human_test_rev1_stops_22kdust_20240924.csv')
-# # converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
-# converters = {"label_map": ast.literal_eval}
-# # converters = {}
-# df = pd.read_csv(csv, converters=converters)
-# print(df.shape)
+# root_dir = '/data/jupiter/li.yu/data'
+# root_dir = '/data/jupiter/datasets/'
+# root_dir = '/data2/jupiter/datasets/'
+root_dir = '/data3/jupiter/datasets/'
+# root_dir = '/data/jupiter/datasets/safety_datasets/'
+# dataset = 'halo_rgb_stereo_train_v10_0'
+dataset = 'halo_rgb_stereo_train_v11_5'
+# dataset = 'humans/on_path_aft/on_path_aft_humans_day_2024_rev2_v16'
+# csv = os.path.join(root_dir, dataset, 'annotations.csv')
+# csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
+# csv = os.path.join(root_dir, dataset, 'master_annotations_more_drops_cleaned_20240611_rev1_lying_down_sitting_n_stop_events_n_night_dust_rev2_no_drops_w_label_counts.csv')
+csv = os.path.join(root_dir, dataset, 'master_annotations_rev1_v1_0_rev2_v11_5.csv')
+# converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
+converters = {"label_map": ast.literal_eval}
+# converters = {}
+df = pd.read_csv(csv, converters=converters)
+print(df.shape)
 
 # # filter out ids already computed
-# old_label_count_csv = '/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_1_categorical_count.csv'
+# old_label_count_csv = '/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_3_categorical_count.csv'
 # old_label_count_df = pd.read_csv(old_label_count_csv)
 # print(old_label_count_df.shape)
 # df = df[~df.unique_id.isin(old_label_count_df.unique_id)]
 # print(df.shape)
 
-# # get label counts
-# df = df[['unique_id', 'label_map', 'rectified_label_save_path']]
-# categorical_labels_map = {'objects_pixel_count': {'Utility pole', 'Immovable Objects', 'Buildings', 'Animals', 'Tile-Inlet'}, 
-#                           'humans_pixel_count': {'Humans'}, 'tractors_or_vehicles_pixel_count': {'Tractors or Vehicles'}, 
-#                           'dust_pixel_count': {'Heavy Dust'}, 'birds_pixel_count': {'Birds'}, 'airborne_debris_pixel_count': {'Airborne Debris'},
-#                           'unharvested_field_pixel_count': {'Unharvested Field'}, 'trees_pixel_count': {'Trees'}}
-# cats = list(categorical_labels_map.keys())
-# categorical_object_labels = {v for k,vs in categorical_labels_map.items() for v in vs}
-# print(cats, categorical_object_labels)
+# get label counts
+df = df[['unique_id', 'label_map', 'rectified_label_save_path']]
+categorical_labels_map = {'objects_pixel_count': {'Utility pole', 'Immovable Objects', 'Buildings', 'Animals', 'Tile-Inlet'}, 
+                          'humans_pixel_count': {'Humans'}, 'tractors_or_vehicles_pixel_count': {'Tractors or Vehicles'}, 
+                          'dust_pixel_count': {'Heavy Dust'}, 'birds_pixel_count': {'Birds'}, 'airborne_debris_pixel_count': {'Airborne Debris'},
+                          'unharvested_field_pixel_count': {'Unharvested Field'}, 'trees_pixel_count': {'Trees'}, 'tall_weeds': {'Tall Weeds'}}
+cats = list(categorical_labels_map.keys())
+categorical_object_labels = {v for k,vs in categorical_labels_map.items() for v in vs}
+print(cats, categorical_object_labels)
 
-# def get_categorical_labels(root_dir, dataset, row):
-#     # # raw label
-#     # label = imageio.imread(os.path.join(root_dir, dataset, row.annotation_pixelwise_0_save_path))
-#     # rectified label
-#     label = np.load(os.path.join(root_dir, dataset, row.rectified_label_save_path))['left']
-#     labels = np.unique(label)
-#     label_str_2_id = {row.label_map[str(i)]: i for i in labels if i != 0}
-#     # print(row.unique_id, label.shape, labels, label_str_2_id)
-#     # process object class
-#     for object_label, subs in categorical_labels_map.items():
-#         object_ids = [label_str_2_id[sub] for sub in subs if sub in label_str_2_id]
-#         object_pixel_count = 0
-#         if len(object_ids) > 0:
-#             object_pixel_count = np.count_nonzero(np.isin(label, object_ids))
-#         row[object_label] = object_pixel_count
-#     return row
+def get_categorical_labels(root_dir, dataset, row):
+    # # raw label
+    # label = imageio.imread(os.path.join(root_dir, dataset, row.annotation_pixelwise_0_save_path))
+    # rectified label
+    label = np.load(os.path.join(root_dir, dataset, row.rectified_label_save_path))['left']
+    labels = np.unique(label)
+    label_str_2_id = {row.label_map.get(str(i), ""): i for i in labels if i != 0}
+    # print(row.unique_id, label.shape, labels, label_str_2_id)
+    # process object class
+    for object_label, subs in categorical_labels_map.items():
+        object_ids = [label_str_2_id[sub] for sub in subs if sub in label_str_2_id]
+        object_pixel_count = 0
+        if len(object_ids) > 0:
+            object_pixel_count = np.count_nonzero(np.isin(label, object_ids))
+        row[object_label] = object_pixel_count
+    return row
 
-# pandarallel.initialize(nb_workers=8, progress_bar=True)
-# df = df.parallel_apply(lambda r: get_categorical_labels(root_dir, dataset, r), axis=1)
-# print(df.shape)
-# # df.to_csv(os.path.join(root_dir, dataset, 'master_annotations_full_cleaned_rev1_train_human_test_rev1_stops_wlc.csv'), index=False)
+pandarallel.initialize(nb_workers=16, progress_bar=True)
+df = df.parallel_apply(lambda r: get_categorical_labels(root_dir, dataset, r), axis=1)
+print(df.shape)
+# df.to_csv(os.path.join(root_dir, dataset, 'master_annotations_full_cleaned_rev1_train_human_test_rev1_stops_wlc.csv'), index=False)
 # df = pd.concat([df[['unique_id'] + cats], old_label_count_df], ignore_index=True)
-# df[['unique_id'] + cats].to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_3_categorical_count.csv', index=False)
+df[['unique_id'] + cats].to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_5_categorical_count.csv', index=False)
 
 # # get debayered rgb paths
 # df = df[['unique_id', 'id', 'hdr_mode', 'artifact_debayeredrgb_0_save_path', 'stereo_left_image', 'label_save_path']]
@@ -148,27 +148,27 @@ from utils import normalize_image, plot_image, plot_images
 #     df.parallel_apply(lambda r: convert_rgb_dataset(image_dir, jpg_dir, downsize, r), axis=1)
 
 
-# check jpg files
-def check_jpg_file(jpg_dir, row):
-    row['corrupted'] = False
-    try:
-        Image.open(os.path.join(jpg_dir, row['img'])).convert("RGB")
-    except:
-        row['corrupted'] = True
-    return row
+# # check jpg files
+# def check_jpg_file(jpg_dir, row):
+#     row['corrupted'] = False
+#     try:
+#         Image.open(os.path.join(jpg_dir, row['img'])).convert("RGB")
+#     except:
+#         row['corrupted'] = True
+#     return row
 
-if len(sys.argv) > 1:
-    i_list = sys.argv[1:]
-for i in range(int(i_list[0]), int(i_list[1]), 150):
-    data_dir = f'/data2/jupiter/datasets/coyo-700m-webdataset/'
-    jpg_dir = os.path.join(data_dir, f'tar_{i}_{int(i)+150}')
-    # data_dir = f'/data3/jupiter/datasets/large_datasets/Jupiter_al_phase3_pool_pt{i}'
-    # data_dir = f'/data3/jupiter/datasets/large_datasets/{i}'
-    # jpg_dir = os.path.join(data_dir, 'images_jpg')
+# if len(sys.argv) > 1:
+#     i_list = sys.argv[1:]
+# for i in range(int(i_list[0]), int(i_list[1]), 150):
+#     data_dir = f'/data2/jupiter/datasets/coyo-700m-webdataset/'
+#     jpg_dir = os.path.join(data_dir, f'tar_{i}_{int(i)+150}')
+#     # data_dir = f'/data3/jupiter/datasets/large_datasets/Jupiter_al_phase3_pool_pt{i}'
+#     # data_dir = f'/data3/jupiter/datasets/large_datasets/{i}'
+#     # jpg_dir = os.path.join(data_dir, 'images_jpg')
 
-    files = [f for f in os.listdir(jpg_dir) if f.endswith('.jpg')]
-    df = pd.DataFrame(data={'img': files})
-    print(df.shape)
-    pandarallel.initialize(nb_workers=32, progress_bar=True)
-    df = df.parallel_apply(lambda r: check_jpg_file(jpg_dir, r), axis=1)
-    df.to_csv(os.path.join(data_dir, f'tar_{i}_{int(i)+150}_corrupted.csv'), index=False)
+#     files = [f for f in os.listdir(jpg_dir) if f.endswith('.jpg')]
+#     df = pd.DataFrame(data={'img': files})
+#     print(df.shape)
+#     pandarallel.initialize(nb_workers=32, progress_bar=True)
+#     df = df.parallel_apply(lambda r: check_jpg_file(jpg_dir, r), axis=1)
+#     df.to_csv(os.path.join(data_dir, f'tar_{i}_{int(i)+150}_corrupted.csv'), index=False)
