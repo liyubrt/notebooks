@@ -21,9 +21,9 @@ for i in i_list:
     dataset_name = i
     print(f'downloading {dataset_name}')
     # dataset_name = 'halo_sample_subset'
-    # dataset_dir = os.path.join('/data/jupiter/datasets/dust_datasets', dataset_name)
+    dataset_dir = os.path.join('/data/jupiter/datasets/dust_datasets', dataset_name)
     # dataset_dir = os.path.join('/data2/jupiter/datasets', dataset_name)
-    dataset_dir = os.path.join('/data3/jupiter/datasets/model_positive', dataset_name)
+    # dataset_dir = os.path.join('/data3/jupiter/datasets/model_positive', dataset_name)
     # dataset_dir = os.path.join('/data/jupiter/li.yu/data', dataset_name)
     os.makedirs(dataset_dir, exist_ok=True)
 
@@ -33,7 +33,7 @@ for i in i_list:
     test_dataset = Dataset.retrieve(name=dataset_name)
     test_df = test_dataset.to_dataframe()
     # test_df = test_df[test_df.camera_location.str.endswith('left')]
-    # test_df.drop(columns=["artifact_raw_0_save_path"], inplace=True, errors="ignore")
+    test_df.drop(columns=["artifact_raw_0_save_path"], inplace=True, errors="ignore")
     print(test_df.shape)
     test_dataset.download(dataset_dir, df=test_df, max_workers=16)
 
