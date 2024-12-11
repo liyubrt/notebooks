@@ -25,24 +25,24 @@ from utils import normalize_image, plot_image, plot_images
 root_dir = '/data3/jupiter/datasets/'
 # root_dir = '/data/jupiter/datasets/safety_datasets/'
 # dataset = 'halo_rgb_stereo_train_v10_0'
-dataset = 'halo_rgb_stereo_train_v11_5'
+dataset = 'halo_rgb_stereo_train_v11_6'
 # dataset = 'humans/on_path_aft/on_path_aft_humans_day_2024_rev2_v16'
 # csv = os.path.join(root_dir, dataset, 'annotations.csv')
 # csv = os.path.join(root_dir, dataset, 'master_annotations.csv')
 # csv = os.path.join(root_dir, dataset, 'master_annotations_more_drops_cleaned_20240611_rev1_lying_down_sitting_n_stop_events_n_night_dust_rev2_no_drops_w_label_counts.csv')
-csv = os.path.join(root_dir, dataset, 'master_annotations_rev1_v1_0_rev2_v11_5.csv')
+csv = os.path.join(root_dir, dataset, 'master_annotations_rev1_v1_0_rev2_v11_6.csv')
 # converters = {"label_map": ast.literal_eval, "label_counts": ast.literal_eval}
 converters = {"label_map": ast.literal_eval}
 # converters = {}
 df = pd.read_csv(csv, converters=converters)
 print(df.shape)
 
-# # filter out ids already computed
-# old_label_count_csv = '/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_3_categorical_count.csv'
-# old_label_count_df = pd.read_csv(old_label_count_csv)
-# print(old_label_count_df.shape)
-# df = df[~df.unique_id.isin(old_label_count_df.unique_id)]
-# print(df.shape)
+# filter out ids already computed
+old_label_count_csv = '/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_5_categorical_count.csv'
+old_label_count_df = pd.read_csv(old_label_count_csv)
+print(old_label_count_df.shape)
+df = df[~df.unique_id.isin(old_label_count_df.unique_id)]
+print(df.shape)
 
 # get label counts
 df = df[['unique_id', 'label_map', 'rectified_label_save_path']]
@@ -75,8 +75,8 @@ pandarallel.initialize(nb_workers=16, progress_bar=True)
 df = df.parallel_apply(lambda r: get_categorical_labels(root_dir, dataset, r), axis=1)
 print(df.shape)
 # df.to_csv(os.path.join(root_dir, dataset, 'master_annotations_full_cleaned_rev1_train_human_test_rev1_stops_wlc.csv'), index=False)
-# df = pd.concat([df[['unique_id'] + cats], old_label_count_df], ignore_index=True)
-df[['unique_id'] + cats].to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_5_categorical_count.csv', index=False)
+df = pd.concat([df[['unique_id'] + cats], old_label_count_df], ignore_index=True)
+df[['unique_id'] + cats].to_csv('/data/jupiter/li.yu/data/halo_rgb_stereo_train_test/train_v11_6_categorical_count.csv', index=False)
 
 # # get debayered rgb paths
 # df = df[['unique_id', 'id', 'hdr_mode', 'artifact_debayeredrgb_0_save_path', 'stereo_left_image', 'label_save_path']]
